@@ -6,7 +6,6 @@ public class DatabaseHandler {
     public static Connection connect() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
-
     public static void initializeDatabase() {
         String sql = "CREATE TABLE IF NOT EXISTS recipes (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +

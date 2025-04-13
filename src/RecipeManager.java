@@ -4,9 +4,8 @@ import java.io.*;
 import org.json.simple.*;
 import org.json.simple.parser.*;
 public class RecipeManager {
-    private String dbPath; // Путь к SQLite-базе данных
+    private String dbPath;
 
-    // Принимает путь к базе данных и создаёт таблицу
     public RecipeManager(String dbPath) {
         this.dbPath = dbPath;
         createTableIfNotExists();
@@ -30,16 +29,15 @@ public class RecipeManager {
                     "isFavorite INTEGER," +
                     "createdDate TEXT," +
                     "inPlan INTEGER)";
-            stmt.execute(sql); // Выполнение SQL-запроса
+            stmt.execute(sql);
         } catch (SQLException e) {
-            e.printStackTrace(); // Вывод ошибки
+            e.printStackTrace();
         }
     }
 
     public void addRecipe(Recipe recipe) {
         String sql = "INSERT INTO recipes(name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan) VALUES(?,?,?,?,?,?,?,?,?,?)";
         try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            // Установка параметров
             pstmt.setString(1, recipe.getName());
             pstmt.setString(2, recipe.getDescription());
             pstmt.setString(3, String.join(",", recipe.getIngredients()));
@@ -51,12 +49,15 @@ public class RecipeManager {
             pstmt.setString(9, recipe.getCreatedDate());
             pstmt.setInt(10, recipe.isInPlan() ? 1 : 0);
             pstmt.executeUpdate();
+
+            exportToJson("recipes.json");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // Получение всех рецептов из базы
+
     public List<Recipe> getAllRecipes() {
         List<Recipe> list = new ArrayList<>();
         try (Connection conn = connect(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM recipes")) {
@@ -68,7 +69,6 @@ public class RecipeManager {
         }
         return list;
     }
-
 
     public List<Recipe> searchByIngredient(String ingredient) {
         List<Recipe> result = new ArrayList<>();
@@ -83,7 +83,6 @@ public class RecipeManager {
         return result;
     }
 
-
     public List<Recipe> filterByCategory(String category) {
         List<Recipe> result = new ArrayList<>();
         for (Recipe r : getAllRecipes()) {
@@ -94,13 +93,11 @@ public class RecipeManager {
         return result;
     }
 
-
     public List<Recipe> sortByCookingTime() {
         List<Recipe> sorted = new ArrayList<>(getAllRecipes());
-        sorted.sort(Comparator.comparing(Recipe::getCookingTime)); // Сортировка по cookingTime
+        sorted.sort(Comparator.comparing(Recipe::getCookingTime));
         return sorted;
     }
-
 
     public List<Recipe> getFavorites() {
         List<Recipe> result = new ArrayList<>();
@@ -110,7 +107,6 @@ public class RecipeManager {
         return result;
     }
 
-
     public List<Recipe> getPlannedRecipes() {
         List<Recipe> result = new ArrayList<>();
         for (Recipe r : getAllRecipes()) {
@@ -118,7 +114,6 @@ public class RecipeManager {
         }
         return result;
     }
-
 
     public List<Recipe> advancedSearch(String ingredient, String category, String time, String serving) {
         List<Recipe> result = new ArrayList<>();
@@ -133,7 +128,6 @@ public class RecipeManager {
         return result;
     }
 
-    // Преобразование объекта Recipe в строку для отображения
     public String recipeToString(Recipe r) {
         return "ID: " + r.getId() + "\nНазвание: " + r.getName() + "\nОписание: " + r.getDescription() +
                 "\nИнгредиенты: " + String.join(", ", r.getIngredients()) +
@@ -146,7 +140,6 @@ public class RecipeManager {
                 "\nВ плане: " + (r.isInPlan() ? "Да" : "Нет");
     }
 
-    // Удаление рецепта по ID
     public void deleteRecipeById(int id) {
         try (Connection conn = connect(); PreparedStatement stmt = conn.prepareStatement("DELETE FROM recipes WHERE id = ?")) {
             stmt.setInt(1, id);
@@ -156,25 +149,44 @@ public class RecipeManager {
         }
     }
 
-    // Импорт рецептов из JSON-файла
     public void importFromJson(String path) {
         try {
             JSONParser parser = new JSONParser();
             JSONArray arr = (JSONArray) parser.parse(new FileReader(path));
             for (Object o : arr) {
                 JSONObject obj = (JSONObject) o;
+
+                List<String> ingredients = new ArrayList<>();
+                List<String> steps = new ArrayList<>();
+
+                if (obj.get("ingredients") instanceof JSONArray) {
+                    for (Object ing : (JSONArray) obj.get("ingredients")) {
+                        ingredients.add((String) ing);
+                    }
+                } else {
+                    ingredients = Arrays.asList(((String) obj.get("ingredients")).split(","));
+                }
+
+                if (obj.get("steps") instanceof JSONArray) {
+                    for (Object step : (JSONArray) obj.get("steps")) {
+                        steps.add((String) step);
+                    }
+                } else {
+                    steps = Arrays.asList(((String) obj.get("steps")).split(","));
+                }
+
                 Recipe r = new Recipe(
                         0,
                         (String) obj.get("name"),
                         (String) obj.get("description"),
-                        Arrays.asList(((String) obj.get("ingredients")).split(",")),
-                        Arrays.asList(((String) obj.get("steps")).split(",")),
+                        ingredients,
+                        steps,
                         (String) obj.get("category"),
                         (String) obj.get("cookingTime"),
                         (String) obj.get("servingSize"),
-                        Boolean.parseBoolean((String) obj.get("isFavorite")),
+                        Boolean.parseBoolean(obj.get("isFavorite").toString()),
                         (String) obj.get("createdDate"),
-                        Boolean.parseBoolean((String) obj.get("inPlan"))
+                        Boolean.parseBoolean(obj.get("inPlan").toString())
                 );
                 addRecipe(r);
             }
@@ -183,21 +195,32 @@ public class RecipeManager {
         }
     }
 
-    // Экспорт рецептов в JSON-файл
     public void exportToJson(String path) {
         JSONArray arr = new JSONArray();
         for (Recipe r : getAllRecipes()) {
             JSONObject obj = new JSONObject();
             obj.put("name", r.getName());
             obj.put("description", r.getDescription());
-            obj.put("ingredients", String.join(",", r.getIngredients()));
-            obj.put("steps", String.join(",", r.getSteps()));
+
+            JSONArray ingredientsArray = new JSONArray();
+            for (String ing : r.getIngredients()) {
+                ingredientsArray.add(ing);
+            }
+            obj.put("ingredients", ingredientsArray);
+
+            JSONArray stepsArray = new JSONArray();
+            for (String step : r.getSteps()) {
+                stepsArray.add(step);
+            }
+            obj.put("steps", stepsArray);
+
             obj.put("category", r.getCategory());
             obj.put("cookingTime", r.getCookingTime());
             obj.put("servingSize", r.getServingSize());
-            obj.put("isFavorite", String.valueOf(r.isFavorite()));
+            obj.put("isFavorite", r.isFavorite());
             obj.put("createdDate", r.getCreatedDate());
-            obj.put("inPlan", String.valueOf(r.isInPlan()));
+            obj.put("inPlan", r.isInPlan());
+
             arr.add(obj);
         }
         try (FileWriter writer = new FileWriter(path)) {
@@ -207,7 +230,6 @@ public class RecipeManager {
         }
     }
 
-    // Вспомогательный метод для извлечения объекта Recipe из ResultSet
     private Recipe extractRecipeFromResultSet(ResultSet rs) throws SQLException {
         return new Recipe(
                 rs.getInt("id"),
@@ -222,6 +244,5 @@ public class RecipeManager {
                 rs.getString("createdDate"),
                 rs.getInt("inPlan") == 1
         );
-
     }
 }

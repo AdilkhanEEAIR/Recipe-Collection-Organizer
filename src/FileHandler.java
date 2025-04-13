@@ -4,7 +4,6 @@ import org.json.simple.*;
 import org.json.simple.parser.*;
 public class FileHandler {
     private static final String FILE_NAME = "recipes.json";
-
     // Метод для сохранения списка рецептов в JSON-файл
     public static void saveToFile(List<Recipe> recipes) {
         JSONArray array = new JSONArray();

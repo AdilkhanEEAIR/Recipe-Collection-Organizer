@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
-
+import java.io.File;
 public class Main {
     private static RecipeManager manager;
 
@@ -17,7 +17,7 @@ public class Main {
             JFrame frame = new JFrame("Recipe Collection Organizer");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(520, 600);
-            frame.setLocationRelativeTo(null); // Центр экрана
+            frame.setLocationRelativeTo(null);
 
             JPanel panel = new JPanel();
             panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -52,7 +52,7 @@ public class Main {
             frame.add(scrollPane);
             frame.setVisible(true);
 
-            // Привязка действий
+            // Обработчики событий кнопок
             buttons[0].addActionListener(e -> showAddRecipeDialog());
             buttons[1].addActionListener(e -> showRecipeList(manager.getAllRecipes()));
             buttons[2].addActionListener(e -> {
@@ -71,19 +71,24 @@ public class Main {
                 String input = JOptionPane.showInputDialog("Введите ID рецепта для удаления:");
                 if (input != null && !input.isEmpty()) {
                     try {
-                        int id = Integer.parseInt(input);
+                        int id = Integer.parseInt(input.trim());
                         manager.deleteRecipeById(id);
                         JOptionPane.showMessageDialog(null, "Рецепт удалён.");
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "Ошибка при удалении рецепта.");
+                        JOptionPane.showMessageDialog(null, "Ошибка при удалении рецепта. Убедитесь, что ID — число.");
                     }
                 }
             });
             buttons[9].addActionListener(e -> {
                 JFileChooser chooser = new JFileChooser();
                 if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                    manager.importFromJson(chooser.getSelectedFile().getAbsolutePath());
-                    JOptionPane.showMessageDialog(null, "Импорт завершён.");
+                    File file = chooser.getSelectedFile();
+                    if (file.exists() && file.length() > 0) {
+                        manager.importFromJson(file.getAbsolutePath());
+                        JOptionPane.showMessageDialog(null, "Импорт завершён.");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Файл пустой или не существует.");
+                    }
                 }
             });
             buttons[10].addActionListener(e -> {
@@ -97,6 +102,7 @@ public class Main {
         });
     }
 
+    // Диалог добавления рецепта
     private static void showAddRecipeDialog() {
         JTextField nameField = new JTextField();
         JTextField descriptionField = new JTextField();
@@ -122,24 +128,31 @@ public class Main {
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
+            if (nameField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Название рецепта не может быть пустым.");
+                return;
+            }
+
             Recipe recipe = new Recipe(
                     0,
-                    nameField.getText(),
-                    descriptionField.getText(),
-                    List.of(ingredientsField.getText().split(",")),
-                    List.of(stepsField.getText().split(",")),
-                    categoryField.getText(),
-                    cookingTimeField.getText(),
-                    servingSizeField.getText(),
+                    nameField.getText().trim(),
+                    descriptionField.getText().trim(),
+                    List.of(ingredientsField.getText().split("\\s*,\\s*")),
+                    List.of(stepsField.getText().split("\\s*,\\s*")),
+                    categoryField.getText().trim(),
+                    cookingTimeField.getText().trim(),
+                    servingSizeField.getText().trim(),
                     favoriteBox.isSelected(),
                     getCurrentDate(),
                     planBox.isSelected()
             );
+
             manager.addRecipe(recipe);
             JOptionPane.showMessageDialog(null, "Рецепт добавлен.");
         }
     }
 
+    // Показ списка рецептов
     private static void showRecipeList(List<Recipe> recipes) {
         if (recipes.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Рецепты не найдены.");
@@ -159,6 +172,7 @@ public class Main {
         JOptionPane.showMessageDialog(null, scrollPane, "Список рецептов", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    // Диалог расширенного поиска
     private static void showAdvancedSearchDialog() {
         JTextField ingredientField = new JTextField();
         JTextField categoryField = new JTextField();
@@ -176,14 +190,16 @@ public class Main {
 
         if (result == JOptionPane.OK_OPTION) {
             List<Recipe> found = manager.advancedSearch(
-                    ingredientField.getText(),
-                    categoryField.getText(),
-                    timeField.getText(),
-                    servingField.getText()
+                    ingredientField.getText().trim(),
+                    categoryField.getText().trim(),
+                    timeField.getText().trim(),
+                    servingField.getText().trim()
             );
             showRecipeList(found);
         }
     }
+
+    // Получение текущей даты
     private static String getCurrentDate() {
         return java.time.LocalDate.now().toString();
     }
