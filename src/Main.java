@@ -10,62 +10,64 @@ public class Main {
         manager = new RecipeManager("recipes.db");
 
         SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {}
+
             JFrame frame = new JFrame("Recipe Collection Organizer");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(500, 550);
+            frame.setSize(520, 600);
+            frame.setLocationRelativeTo(null); // Центр экрана
 
             JPanel panel = new JPanel();
-            panel.setLayout(new GridLayout(0, 1, 10, 10));
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-            JButton addButton = new JButton("Добавить рецепт");
-            JButton viewButton = new JButton("Просмотреть все рецепты");
-            JButton searchButton = new JButton("Поиск по ингредиенту");
-            JButton filterButton = new JButton("Фильтрация по категории");
-            JButton sortButton = new JButton("Сортировка по времени");
-            JButton favoritesButton = new JButton("Избранные рецепты");
-            JButton planButton = new JButton("Запланированные рецепты");
-            JButton advancedSearchButton = new JButton("Расширенный поиск");
-            JButton deleteButton = new JButton("Удалить рецепт");
-            JButton importButton = new JButton("Импортировать JSON-файл");
-            JButton exportButton = new JButton("Экспортировать JSON-файл");
-            JButton exitButton = new JButton("Выйти");
+            String[] buttonLabels = {
+                    "Добавить рецепт",
+                    "Посмотреть все рецепты",
+                    "Поиск по ингредиенту",
+                    "Фильтрация по категориям блюд",
+                    "Сортировка по времени приготовления",
+                    "Избранные рецепты",
+                    "Запланированные рецепты",
+                    "Расширенный поиск",
+                    "Удалить рецепт",
+                    "Импортировать JSON-файл",
+                    "Экспортировать JSON-файл",
+                    "Выйти"
+            };
 
-            panel.add(addButton);
-            panel.add(viewButton);
-            panel.add(searchButton);
-            panel.add(filterButton);
-            panel.add(sortButton);
-            panel.add(favoritesButton);
-            panel.add(planButton);
-            panel.add(advancedSearchButton);
-            panel.add(deleteButton);
-            panel.add(importButton);
-            panel.add(exportButton);
-            panel.add(exitButton);
+            JButton[] buttons = new JButton[buttonLabels.length];
+            for (int i = 0; i < buttonLabels.length; i++) {
+                buttons[i] = new JButton(buttonLabels[i]);
+                buttons[i].setAlignmentX(Component.CENTER_ALIGNMENT);
+                buttons[i].setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+                panel.add(Box.createVerticalStrut(5));
+                panel.add(buttons[i]);
+            }
 
-            frame.add(panel);
+            JScrollPane scrollPane = new JScrollPane(panel);
+            scrollPane.setBorder(null);
+            frame.add(scrollPane);
             frame.setVisible(true);
 
-            addButton.addActionListener(e -> showAddRecipeDialog());
-            viewButton.addActionListener(e -> showRecipeList(manager.getAllRecipes()));
-            searchButton.addActionListener(e -> {
-                String ingredient = JOptionPane.showInputDialog("Введите ингредиент:");
-                if (ingredient != null) {
-                    showRecipeList(manager.searchByIngredient(ingredient));
-                }
+            // Привязка действий
+            buttons[0].addActionListener(e -> showAddRecipeDialog());
+            buttons[1].addActionListener(e -> showRecipeList(manager.getAllRecipes()));
+            buttons[2].addActionListener(e -> {
+                String input = JOptionPane.showInputDialog("Введите ингредиент:");
+                if (input != null) showRecipeList(manager.searchByIngredient(input));
             });
-            filterButton.addActionListener(e -> {
-                String category = JOptionPane.showInputDialog("Введите категорию:");
-                if (category != null) {
-                    showRecipeList(manager.filterByCategory(category));
-                }
+            buttons[3].addActionListener(e -> {
+                String input = JOptionPane.showInputDialog("Введите категорию:");
+                if (input != null) showRecipeList(manager.filterByCategory(input));
             });
-            sortButton.addActionListener(e -> showRecipeList(manager.sortByCookingTime()));
-            favoritesButton.addActionListener(e -> showRecipeList(manager.getFavorites()));
-            planButton.addActionListener(e -> showRecipeList(manager.getPlannedRecipes()));
-            advancedSearchButton.addActionListener(e -> showAdvancedSearchDialog());
-
-            deleteButton.addActionListener(e -> {
+            buttons[4].addActionListener(e -> showRecipeList(manager.sortByCookingTime()));
+            buttons[5].addActionListener(e -> showRecipeList(manager.getFavorites()));
+            buttons[6].addActionListener(e -> showRecipeList(manager.getPlannedRecipes()));
+            buttons[7].addActionListener(e -> showAdvancedSearchDialog());
+            buttons[8].addActionListener(e -> {
                 String input = JOptionPane.showInputDialog("Введите ID рецепта для удаления:");
                 if (input != null && !input.isEmpty()) {
                     try {
@@ -77,28 +79,21 @@ public class Main {
                     }
                 }
             });
-
-            importButton.addActionListener(e -> {
-                JFileChooser fileChooser = new JFileChooser();
-                int result = fileChooser.showOpenDialog(null);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    String path = fileChooser.getSelectedFile().getAbsolutePath();
-                    manager.importFromJson(path);
+            buttons[9].addActionListener(e -> {
+                JFileChooser chooser = new JFileChooser();
+                if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                    manager.importFromJson(chooser.getSelectedFile().getAbsolutePath());
                     JOptionPane.showMessageDialog(null, "Импорт завершён.");
                 }
             });
-
-            exportButton.addActionListener(e -> {
-                JFileChooser fileChooser = new JFileChooser();
-                int result = fileChooser.showSaveDialog(null);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    String path = fileChooser.getSelectedFile().getAbsolutePath();
-                    manager.exportToJson(path);
+            buttons[10].addActionListener(e -> {
+                JFileChooser chooser = new JFileChooser();
+                if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                    manager.exportToJson(chooser.getSelectedFile().getAbsolutePath());
                     JOptionPane.showMessageDialog(null, "Экспорт завершён.");
                 }
             });
-
-            exitButton.addActionListener(e -> System.exit(0));
+            buttons[11].addActionListener(e -> System.exit(0));
         });
     }
 
@@ -113,7 +108,7 @@ public class Main {
         JCheckBox favoriteBox = new JCheckBox("Избранное");
         JCheckBox planBox = new JCheckBox("В план");
 
-        JPanel panel = new JPanel(new GridLayout(0, 1));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
         panel.add(new JLabel("Название:")); panel.add(nameField);
         panel.add(new JLabel("Описание:")); panel.add(descriptionField);
         panel.add(new JLabel("Ингредиенты (через запятую):")); panel.add(ingredientsField);
@@ -121,8 +116,7 @@ public class Main {
         panel.add(new JLabel("Категория:")); panel.add(categoryField);
         panel.add(new JLabel("Время приготовления:")); panel.add(cookingTimeField);
         panel.add(new JLabel("Порции:")); panel.add(servingSizeField);
-        panel.add(favoriteBox);
-        panel.add(planBox);
+        panel.add(favoriteBox); panel.add(planBox);
 
         int result = JOptionPane.showConfirmDialog(null, panel, "Добавить рецепт",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -160,8 +154,8 @@ public class Main {
         JTextArea textArea = new JTextArea(sb.toString());
         textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
-
         scrollPane.setPreferredSize(new Dimension(480, 350));
+
         JOptionPane.showMessageDialog(null, scrollPane, "Список рецептов", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -171,7 +165,7 @@ public class Main {
         JTextField timeField = new JTextField();
         JTextField servingField = new JTextField();
 
-        JPanel panel = new JPanel(new GridLayout(0, 1));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
         panel.add(new JLabel("Ингредиент:")); panel.add(ingredientField);
         panel.add(new JLabel("Категория:")); panel.add(categoryField);
         panel.add(new JLabel("Время приготовления:")); panel.add(timeField);
@@ -190,7 +184,6 @@ public class Main {
             showRecipeList(found);
         }
     }
-
     private static String getCurrentDate() {
         return java.time.LocalDate.now().toString();
     }
