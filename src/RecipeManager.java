@@ -1,139 +1,168 @@
+import java.sql.*;
 import java.util.*;
-import java.io.*;
 
 public class RecipeManager {
-    private List<Recipe> recipes;
+    private Connection conn;
 
-    public RecipeManager() {
-        recipes = new ArrayList<Recipe>();
+    public RecipeManager(String dbFileName) {
+        try {
+            conn = DriverManager.getConnection("jdbc:sqlite:" + dbFileName);
+            initializeDatabase();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void initializeDatabase() {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE TABLE IF NOT EXISTS recipes (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "name TEXT," +
+                    "description TEXT," +
+                    "ingredients TEXT," +
+                    "steps TEXT," +
+                    "category TEXT," +
+                    "cookingTime TEXT," +
+                    "servingSize TEXT," +
+                    "isFavorite INTEGER," +
+                    "createdDate TEXT," +
+                    "inPlan INTEGER)");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void addRecipe(Recipe recipe) {
-        recipes.add(recipe);
+        String sql = "INSERT INTO recipes (name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, recipe.getName());
+            pstmt.setString(2, recipe.getDescription());
+            pstmt.setString(3, String.join(",", recipe.getIngredients()));
+            pstmt.setString(4, String.join(",", recipe.getSteps()));
+            pstmt.setString(5, recipe.getCategory());
+            pstmt.setString(6, recipe.getCookingTime());
+            pstmt.setString(7, recipe.getServingSize());
+            pstmt.setInt(8, recipe.isFavorite() ? 1 : 0);
+            pstmt.setString(9, recipe.getCreatedDate());
+            pstmt.setInt(10, recipe.isInPlan() ? 1 : 0);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public List<Recipe> getAllRecipes() {
+        List<Recipe> recipes = new ArrayList<>();
+        String sql = "SELECT * FROM recipes";
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                recipes.add(parseRecipe(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return recipes;
     }
 
-    public Recipe getRecipeById(int id) {
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).getId() == id) {
-                return recipes.get(i);
-            }
-        }
-        return null;
+    private Recipe parseRecipe(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String description = rs.getString("description");
+        List<String> ingredients = Arrays.asList(rs.getString("ingredients").split(","));
+        List<String> steps = Arrays.asList(rs.getString("steps").split(","));
+        String category = rs.getString("category");
+        String cookingTime = rs.getString("cookingTime");
+        String servingSize = rs.getString("servingSize");
+        boolean isFavorite = rs.getInt("isFavorite") == 1;
+        String createdDate = rs.getString("createdDate");
+        boolean inPlan = rs.getInt("inPlan") == 1;
+
+        return new Recipe(id, name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan);
     }
 
-    public boolean deleteRecipeById(int id) {
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).getId() == id) {
-                recipes.remove(i);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void updateRecipe(int id, Recipe updatedRecipe) {
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).getId() == id) {
-                recipes.set(i, updatedRecipe);
-                return;
-            }
-        }
-    }
-
-    public int generateId() {
-        int maxId = 0;
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).getId() > maxId) {
-                maxId = recipes.get(i).getId();
-            }
-        }
-        return maxId + 1;
+    public String recipeToString(Recipe recipe) {
+        return "ID: " + recipe.getId() + "\n" +
+                "Название: " + recipe.getName() + "\n" +
+                "Описание: " + recipe.getDescription() + "\n" +
+                "Ингредиенты: " + String.join(", ", recipe.getIngredients()) + "\n" +
+                "Шаги: " + String.join(", ", recipe.getSteps()) + "\n" +
+                "Категория: " + recipe.getCategory() + "\n" +
+                "Время приготовления: " + recipe.getCookingTime() + "\n" +
+                "Порции: " + recipe.getServingSize() + "\n" +
+                "Избранное: " + (recipe.isFavorite() ? "Да" : "Нет") + "\n" +
+                "Дата создания: " + recipe.getCreatedDate() + "\n" +
+                "В плане: " + (recipe.isInPlan() ? "Да" : "Нет") + "\n";
     }
 
     public List<Recipe> searchByIngredient(String ingredient) {
-        List<Recipe> results = new ArrayList<Recipe>();
-        for (int i = 0; i < recipes.size(); i++) {
-            Recipe r = recipes.get(i);
-            if (r.getIngredients().contains(ingredient)) {
-                results.add(r);
+        List<Recipe> result = new ArrayList<>();
+        for (Recipe recipe : getAllRecipes()) {
+            for (String ing : recipe.getIngredients()) {
+                if (ing.toLowerCase().contains(ingredient.toLowerCase())) {
+                    result.add(recipe);
+                    break;
+                }
             }
         }
-        return results;
+        return result;
     }
 
     public List<Recipe> filterByCategory(String category) {
-        List<Recipe> results = new ArrayList<Recipe>();
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).getCategory().equalsIgnoreCase(category)) {
-                results.add(recipes.get(i));
+        List<Recipe> result = new ArrayList<>();
+        for (Recipe recipe : getAllRecipes()) {
+            if (recipe.getCategory().equalsIgnoreCase(category)) {
+                result.add(recipe);
             }
         }
-        return results;
+        return result;
     }
 
     public List<Recipe> sortByCookingTime() {
-        List<Recipe> sorted = new ArrayList<Recipe>(recipes);
-        Collections.sort(sorted, new Comparator<Recipe>() {
+        List<Recipe> recipes = getAllRecipes();
+        recipes.sort(new Comparator<Recipe>() {
             public int compare(Recipe r1, Recipe r2) {
-                return r1.getCookingTime().compareTo(r2.getCookingTime());
+                try {
+                    return Integer.parseInt(r1.getCookingTime()) - Integer.parseInt(r2.getCookingTime());
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
             }
         });
-        return sorted;
+        return recipes;
     }
 
     public List<Recipe> getFavorites() {
-        List<Recipe> favorites = new ArrayList<Recipe>();
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).isFavorite()) {
-                favorites.add(recipes.get(i));
+        List<Recipe> result = new ArrayList<>();
+        for (Recipe recipe : getAllRecipes()) {
+            if (recipe.isFavorite()) {
+                result.add(recipe);
             }
         }
-        return favorites;
-    }
-
-    public List<Recipe> advancedSearch(List<String> ingredients, String category, String time, String servings) {
-        List<Recipe> results = new ArrayList<Recipe>();
-        for (int i = 0; i < recipes.size(); i++) {
-            Recipe r = recipes.get(i);
-            if (r.getIngredients().containsAll(ingredients)
-                    && r.getCategory().equalsIgnoreCase(category)
-                    && r.getCookingTime().equalsIgnoreCase(time)
-                    && r.getServingSize().equalsIgnoreCase(servings)) {
-                results.add(r);
-            }
-        }
-        return results;
+        return result;
     }
 
     public List<Recipe> getPlannedRecipes() {
-        List<Recipe> planned = new ArrayList<Recipe>();
-        for (int i = 0; i < recipes.size(); i++) {
-            if (recipes.get(i).isInPlan()) {
-                planned.add(recipes.get(i));
+        List<Recipe> result = new ArrayList<>();
+        for (Recipe recipe : getAllRecipes()) {
+            if (recipe.isInPlan()) {
+                result.add(recipe);
             }
         }
-        return planned;
+        return result;
     }
 
-    public String getCurrentDate() {
-        Date date = new Date();
-        return new java.text.SimpleDateFormat("yyyy-MM-dd").format(date);
-    }
+    public List<Recipe> advancedSearch(String ingredient, String category, String time, String servings) {
+        List<Recipe> result = new ArrayList<>();
+        for (Recipe recipe : getAllRecipes()) {
+            boolean matchesIngredient = ingredient.isEmpty() || recipe.getIngredients().toString().toLowerCase().contains(ingredient.toLowerCase());
+            boolean matchesCategory = category.isEmpty() || recipe.getCategory().equalsIgnoreCase(category);
+            boolean matchesTime = time.isEmpty() || recipe.getCookingTime().equals(time);
+            boolean matchesServings = servings.isEmpty() || recipe.getServingSize().equals(servings);
 
-    public String recipeToString(Recipe r) {
-        return "ID: " + r.getId() + "\nНазвание: " + r.getName() +
-                "\nОписание: " + r.getDescription() +
-                "\nИнгредиенты: " + r.getIngredients() +
-                "\nШаги: " + r.getSteps() +
-                "\nКатегория: " + r.getCategory() +
-                "\nВремя приготовления: " + r.getCookingTime() +
-                "\nПорции: " + r.getServingSize() +
-                "\nИзбранное: " + (r.isFavorite() ? "Да" : "Нет") +
-                "\nДата создания: " + r.getCreatedDate() +
-                "\nВ плане: " + (r.isInPlan() ? "Да" : "Нет") + "\n";
+            if (matchesIngredient && matchesCategory && matchesTime && matchesServings) {
+                result.add(recipe);
+            }
+        }
+        return result;
     }
 }

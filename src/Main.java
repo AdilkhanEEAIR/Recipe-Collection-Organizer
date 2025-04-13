@@ -2,171 +2,155 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 public class Main {
+    private static RecipeManager manager;
+
     public static void main(String[] args) {
-        RecipeManager manager = new RecipeManager();
+        manager = new RecipeManager("recipes.db");
 
-        JFrame frame = new JFrame("Органайзер рецептов");
-        frame.setSize(600, 400);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Recipe Collection Organizer");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(500, 400);
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(0, 1));
+            JPanel panel = new JPanel();
+            panel.setLayout(new GridLayout(0, 1, 10, 10));
 
-        JButton addButton = new JButton("Добавить рецепт");
-        JButton viewButton = new JButton("Показать все рецепты");
-        JButton searchButton = new JButton("Поиск по ингредиенту");
-        JButton filterButton = new JButton("Фильтр по категории");
-        JButton sortButton = new JButton("Сортировка по времени");
-        JButton favoritesButton = new JButton("Избранные рецепты");
-        JButton advancedSearchButton = new JButton("Расширенный поиск");
-        JButton planButton = new JButton("План на готовку");
-        JButton exitButton = new JButton("Выйти");
+            JButton addButton = new JButton("Добавить рецепт");
+            JButton viewButton = new JButton("Просмотреть все рецепты");
+            JButton searchButton = new JButton("Поиск по ингредиенту");
+            JButton filterButton = new JButton("Фильтрация по категории");
+            JButton sortButton = new JButton("Сортировка по времени");
+            JButton favoritesButton = new JButton("Избранные рецепты");
+            JButton planButton = new JButton("Запланированные рецепты");
+            JButton advancedSearchButton = new JButton("Расширенный поиск");
+            JButton exitButton = new JButton("Выйти");
 
-        panel.add(addButton);
-        panel.add(viewButton);
-        panel.add(searchButton);
-        panel.add(filterButton);
-        panel.add(sortButton);
-        panel.add(favoritesButton);
-        panel.add(advancedSearchButton);
-        panel.add(planButton);
-        panel.add(exitButton);
+            panel.add(addButton);
+            panel.add(viewButton);
+            panel.add(searchButton);
+            panel.add(filterButton);
+            panel.add(sortButton);
+            panel.add(favoritesButton);
+            panel.add(planButton);
+            panel.add(advancedSearchButton);
+            panel.add(exitButton);
 
-        frame.add(panel);
-        frame.setVisible(true);
+            frame.add(panel);
+            frame.setVisible(true);
 
-        // Добавление рецепта
-        addButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String name = JOptionPane.showInputDialog("Введите название рецепта:");
-                String description = JOptionPane.showInputDialog("Введите описание:");
-                String ingredients = JOptionPane.showInputDialog("Введите ингредиенты (через запятую):");
-                String steps = JOptionPane.showInputDialog("Введите шаги (через запятую):");
-                String category = JOptionPane.showInputDialog("Введите категорию:");
-                String time = JOptionPane.showInputDialog("Введите время приготовления:");
-                String servings = JOptionPane.showInputDialog("Введите количество порций:");
-
-                int id = manager.generateId();
-                List<String> ingList = Arrays.asList(ingredients.split(","));
-                List<String> stepList = Arrays.asList(steps.split(","));
-
-                Recipe recipe = new Recipe(
-                        id,
-                        name,
-                        description,
-                        ingList,
-                        stepList,
-                        category,
-                        time,
-                        servings,
-                        false,
-                        manager.getCurrentDate(),
-                        false
-                );
-
-                manager.addRecipe(recipe);
-                JOptionPane.showMessageDialog(frame, "Рецепт добавлен!");
-            }
-        });
-
-        // Просмотр всех рецептов 
-        viewButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                List<Recipe> all = manager.getAllRecipes();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < all.size(); i++) {
-                    sb.append(manager.recipeToString(all.get(i))).append("\n\n");
-                }
-                JTextArea textArea = new JTextArea(sb.toString());
-                textArea.setEditable(false);
-                JScrollPane scrollPane = new JScrollPane(textArea);
-                scrollPane.setPreferredSize(new Dimension(500, 300));
-                JOptionPane.showMessageDialog(frame, scrollPane, "Все рецепты", JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-
-        // Поиск по ингредиенту рецепта
-        searchButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            addButton.addActionListener(e -> showAddRecipeDialog());
+            viewButton.addActionListener(e -> showRecipeList(manager.getAllRecipes()));
+            searchButton.addActionListener(e -> {
                 String ingredient = JOptionPane.showInputDialog("Введите ингредиент:");
-                List<Recipe> results = manager.searchByIngredient(ingredient);
-                showResults(results, frame, "Результаты поиска по ингредиенту");
-            }
-        });
-
-        // Фильтр по категории рецептов
-        filterButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+                if (ingredient != null) {
+                    showRecipeList(manager.searchByIngredient(ingredient));
+                }
+            });
+            filterButton.addActionListener(e -> {
                 String category = JOptionPane.showInputDialog("Введите категорию:");
-                List<Recipe> results = manager.filterByCategory(category);
-                showResults(results, frame, "Рецепты по категории");
-            }
-        });
-
-        // Сортировка по времени
-        sortButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                List<Recipe> results = manager.sortByCookingTime();
-                showResults(results, frame, "Рецепты по времени приготовления");
-            }
-        });
-
-        // Избранные рецепты
-        favoritesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                List<Recipe> results = manager.getFavorites();
-                showResults(results, frame, "Избранные рецепты");
-            }
-        });
-
-        // Расширенный поиск
-        advancedSearchButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String ingredients = JOptionPane.showInputDialog("Ингредиенты (через запятую):");
-                String category = JOptionPane.showInputDialog("Категория:");
-                String time = JOptionPane.showInputDialog("Время приготовления:");
-                String servings = JOptionPane.showInputDialog("Количество порций:");
-
-                List<String> ingredientList = Arrays.asList(ingredients.split(","));
-                List<Recipe> results = manager.advancedSearch(ingredientList, category, time, servings);
-                showResults(results, frame, "Расширенный поиск");
-            }
-        });
-
-        // План на готовку
-        planButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                List<Recipe> results = manager.getPlannedRecipes();
-                showResults(results, frame, "План готовки");
-            }
-        });
-
-        // Выход из приложения
-        exitButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                frame.dispose();
-            }
+                if (category != null) {
+                    showRecipeList(manager.filterByCategory(category));
+                }
+            });
+            sortButton.addActionListener(e -> showRecipeList(manager.sortByCookingTime()));
+            favoritesButton.addActionListener(e -> showRecipeList(manager.getFavorites()));
+            planButton.addActionListener(e -> showRecipeList(manager.getPlannedRecipes()));
+            advancedSearchButton.addActionListener(e -> showAdvancedSearchDialog());
+            exitButton.addActionListener(e -> System.exit(0));
         });
     }
 
-    // Метод для отображения списка рецептов
-    private static void showResults(List<Recipe> results, JFrame frame, String title) {
-        if (results.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Рецепты не найдены.");
+    private static void showAddRecipeDialog() {
+        JTextField nameField = new JTextField();
+        JTextField descriptionField = new JTextField();
+        JTextField ingredientsField = new JTextField();
+        JTextField stepsField = new JTextField();
+        JTextField categoryField = new JTextField();
+        JTextField cookingTimeField = new JTextField();
+        JTextField servingSizeField = new JTextField();
+        JCheckBox favoriteBox = new JCheckBox("Избранное");
+        JCheckBox planBox = new JCheckBox("В план");
+
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Название:")); panel.add(nameField);
+        panel.add(new JLabel("Описание:")); panel.add(descriptionField);
+        panel.add(new JLabel("Ингредиенты (через запятую):")); panel.add(ingredientsField);
+        panel.add(new JLabel("Шаги (через запятую):")); panel.add(stepsField);
+        panel.add(new JLabel("Категория:")); panel.add(categoryField);
+        panel.add(new JLabel("Время приготовления:")); panel.add(cookingTimeField);
+        panel.add(new JLabel("Порции:")); panel.add(servingSizeField);
+        panel.add(favoriteBox);
+        panel.add(planBox);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Добавить рецепт",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            Recipe recipe = new Recipe(
+                    0,
+                    nameField.getText(),
+                    descriptionField.getText(),
+                    List.of(ingredientsField.getText().split(",")),
+                    List.of(stepsField.getText().split(",")),
+                    categoryField.getText(),
+                    cookingTimeField.getText(),
+                    servingSizeField.getText(),
+                    favoriteBox.isSelected(),
+                    getCurrentDate(),
+                    planBox.isSelected()
+            );
+            manager.addRecipe(recipe);
+            JOptionPane.showMessageDialog(null, "Рецепт добавлен.");
+        }
+    }
+
+    private static void showRecipeList(List<Recipe> recipes) {
+        if (recipes.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Рецепты не найдены.");
             return;
         }
+
         StringBuilder sb = new StringBuilder();
-        RecipeManager manager = new RecipeManager(); // только для вызова метода recipeToString
-        for (Recipe r : results) {
-            sb.append(manager.recipeToString(r)).append("\n\n");
+        for (Recipe r : recipes) {
+            sb.append(manager.recipeToString(r)).append("\n-------------------\n");
         }
+
         JTextArea textArea = new JTextArea(sb.toString());
         textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
-        scrollPane.setPreferredSize(new Dimension(500, 300));
-        JOptionPane.showMessageDialog(frame, scrollPane, title, JOptionPane.INFORMATION_MESSAGE);
+
+        scrollPane.setPreferredSize(new Dimension(480, 350));
+        JOptionPane.showMessageDialog(null, scrollPane, "Список рецептов", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static void showAdvancedSearchDialog() {
+        JTextField ingredientField = new JTextField();
+        JTextField categoryField = new JTextField();
+        JTextField timeField = new JTextField();
+        JTextField servingField = new JTextField();
+
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Ингредиент:")); panel.add(ingredientField);
+        panel.add(new JLabel("Категория:")); panel.add(categoryField);
+        panel.add(new JLabel("Время приготовления:")); panel.add(timeField);
+        panel.add(new JLabel("Порции:")); panel.add(servingField);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Расширенный поиск",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            List<Recipe> found = manager.advancedSearch(
+                    ingredientField.getText(),
+                    categoryField.getText(),
+                    timeField.getText(),
+                    servingField.getText()
+            );
+            showRecipeList(found);
+        }
+    }
+    private static String getCurrentDate() {
+        return java.time.LocalDate.now().toString();
     }
 }
