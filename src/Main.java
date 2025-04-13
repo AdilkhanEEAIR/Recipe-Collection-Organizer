@@ -97,7 +97,7 @@ public class Main {
             }
         });
 
-        // Фильтр по категории
+        // Фильтр по категории рецептов
         filterButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String category = JOptionPane.showInputDialog("Введите категорию:");
