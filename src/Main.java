@@ -12,7 +12,7 @@ public class Main {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Recipe Collection Organizer");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(500, 400);
+            frame.setSize(500, 550);
 
             JPanel panel = new JPanel();
             panel.setLayout(new GridLayout(0, 1, 10, 10));
@@ -25,6 +25,9 @@ public class Main {
             JButton favoritesButton = new JButton("Избранные рецепты");
             JButton planButton = new JButton("Запланированные рецепты");
             JButton advancedSearchButton = new JButton("Расширенный поиск");
+            JButton deleteButton = new JButton("Удалить рецепт");
+            JButton importButton = new JButton("Импортировать JSON-файл");
+            JButton exportButton = new JButton("Экспортировать JSON-файл");
             JButton exitButton = new JButton("Выйти");
 
             panel.add(addButton);
@@ -35,6 +38,9 @@ public class Main {
             panel.add(favoritesButton);
             panel.add(planButton);
             panel.add(advancedSearchButton);
+            panel.add(deleteButton);
+            panel.add(importButton);
+            panel.add(exportButton);
             panel.add(exitButton);
 
             frame.add(panel);
@@ -58,6 +64,40 @@ public class Main {
             favoritesButton.addActionListener(e -> showRecipeList(manager.getFavorites()));
             planButton.addActionListener(e -> showRecipeList(manager.getPlannedRecipes()));
             advancedSearchButton.addActionListener(e -> showAdvancedSearchDialog());
+
+            deleteButton.addActionListener(e -> {
+                String input = JOptionPane.showInputDialog("Введите ID рецепта для удаления:");
+                if (input != null && !input.isEmpty()) {
+                    try {
+                        int id = Integer.parseInt(input);
+                        manager.deleteRecipeById(id);
+                        JOptionPane.showMessageDialog(null, "Рецепт удалён.");
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "Ошибка при удалении рецепта.");
+                    }
+                }
+            });
+
+            importButton.addActionListener(e -> {
+                JFileChooser fileChooser = new JFileChooser();
+                int result = fileChooser.showOpenDialog(null);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    String path = fileChooser.getSelectedFile().getAbsolutePath();
+                    manager.importFromJson(path);
+                    JOptionPane.showMessageDialog(null, "Импорт завершён.");
+                }
+            });
+
+            exportButton.addActionListener(e -> {
+                JFileChooser fileChooser = new JFileChooser();
+                int result = fileChooser.showSaveDialog(null);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    String path = fileChooser.getSelectedFile().getAbsolutePath();
+                    manager.exportToJson(path);
+                    JOptionPane.showMessageDialog(null, "Экспорт завершён.");
+                }
+            });
+
             exitButton.addActionListener(e -> System.exit(0));
         });
     }
@@ -150,6 +190,7 @@ public class Main {
             showRecipeList(found);
         }
     }
+
     private static String getCurrentDate() {
         return java.time.LocalDate.now().toString();
     }

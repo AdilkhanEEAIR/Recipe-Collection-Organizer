@@ -1,21 +1,24 @@
 import java.sql.*;
 import java.util.*;
+import java.io.*;
+import org.json.simple.*;
+import org.json.simple.parser.*;
 
 public class RecipeManager {
-    private Connection conn;
+    private String dbPath;
 
-    public RecipeManager(String dbFileName) {
-        try {
-            conn = DriverManager.getConnection("jdbc:sqlite:" + dbFileName);
-            initializeDatabase();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public RecipeManager(String dbPath) {
+        this.dbPath = dbPath;
+        createTableIfNotExists();
     }
 
-    private void initializeDatabase() {
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS recipes (" +
+    private Connection connect() throws SQLException {
+        return DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+    }
+
+    private void createTableIfNotExists() {
+        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS recipes (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT," +
                     "description TEXT," +
@@ -26,15 +29,16 @@ public class RecipeManager {
                     "servingSize TEXT," +
                     "isFavorite INTEGER," +
                     "createdDate TEXT," +
-                    "inPlan INTEGER)");
+                    "inPlan INTEGER)";
+            stmt.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public void addRecipe(Recipe recipe) {
-        String sql = "INSERT INTO recipes (name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = "INSERT INTO recipes(name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan) VALUES(?,?,?,?,?,?,?,?,?,?)";
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, recipe.getName());
             pstmt.setString(2, recipe.getDescription());
             pstmt.setString(3, String.join(",", recipe.getIngredients()));
@@ -52,54 +56,23 @@ public class RecipeManager {
     }
 
     public List<Recipe> getAllRecipes() {
-        List<Recipe> recipes = new ArrayList<>();
-        String sql = "SELECT * FROM recipes";
-        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+        List<Recipe> list = new ArrayList<>();
+        try (Connection conn = connect(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM recipes")) {
             while (rs.next()) {
-                recipes.add(parseRecipe(rs));
+                list.add(extractRecipeFromResultSet(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return recipes;
-    }
-
-    private Recipe parseRecipe(ResultSet rs) throws SQLException {
-        int id = rs.getInt("id");
-        String name = rs.getString("name");
-        String description = rs.getString("description");
-        List<String> ingredients = Arrays.asList(rs.getString("ingredients").split(","));
-        List<String> steps = Arrays.asList(rs.getString("steps").split(","));
-        String category = rs.getString("category");
-        String cookingTime = rs.getString("cookingTime");
-        String servingSize = rs.getString("servingSize");
-        boolean isFavorite = rs.getInt("isFavorite") == 1;
-        String createdDate = rs.getString("createdDate");
-        boolean inPlan = rs.getInt("inPlan") == 1;
-
-        return new Recipe(id, name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan);
-    }
-
-    public String recipeToString(Recipe recipe) {
-        return "ID: " + recipe.getId() + "\n" +
-                "Название: " + recipe.getName() + "\n" +
-                "Описание: " + recipe.getDescription() + "\n" +
-                "Ингредиенты: " + String.join(", ", recipe.getIngredients()) + "\n" +
-                "Шаги: " + String.join(", ", recipe.getSteps()) + "\n" +
-                "Категория: " + recipe.getCategory() + "\n" +
-                "Время приготовления: " + recipe.getCookingTime() + "\n" +
-                "Порции: " + recipe.getServingSize() + "\n" +
-                "Избранное: " + (recipe.isFavorite() ? "Да" : "Нет") + "\n" +
-                "Дата создания: " + recipe.getCreatedDate() + "\n" +
-                "В плане: " + (recipe.isInPlan() ? "Да" : "Нет") + "\n";
+        return list;
     }
 
     public List<Recipe> searchByIngredient(String ingredient) {
         List<Recipe> result = new ArrayList<>();
-        for (Recipe recipe : getAllRecipes()) {
-            for (String ing : recipe.getIngredients()) {
-                if (ing.toLowerCase().contains(ingredient.toLowerCase())) {
-                    result.add(recipe);
+        for (Recipe r : getAllRecipes()) {
+            for (String ing : r.getIngredients()) {
+                if (ing.trim().equalsIgnoreCase(ingredient.trim())) {
+                    result.add(r);
                     break;
                 }
             }
@@ -109,60 +82,132 @@ public class RecipeManager {
 
     public List<Recipe> filterByCategory(String category) {
         List<Recipe> result = new ArrayList<>();
-        for (Recipe recipe : getAllRecipes()) {
-            if (recipe.getCategory().equalsIgnoreCase(category)) {
-                result.add(recipe);
+        for (Recipe r : getAllRecipes()) {
+            if (r.getCategory().equalsIgnoreCase(category)) {
+                result.add(r);
             }
         }
         return result;
     }
 
     public List<Recipe> sortByCookingTime() {
-        List<Recipe> recipes = getAllRecipes();
-        recipes.sort(new Comparator<Recipe>() {
-            public int compare(Recipe r1, Recipe r2) {
-                try {
-                    return Integer.parseInt(r1.getCookingTime()) - Integer.parseInt(r2.getCookingTime());
-                } catch (NumberFormatException e) {
-                    return 0;
-                }
-            }
-        });
-        return recipes;
+        List<Recipe> sorted = new ArrayList<>(getAllRecipes());
+        sorted.sort(Comparator.comparing(Recipe::getCookingTime));
+        return sorted;
     }
 
     public List<Recipe> getFavorites() {
         List<Recipe> result = new ArrayList<>();
-        for (Recipe recipe : getAllRecipes()) {
-            if (recipe.isFavorite()) {
-                result.add(recipe);
-            }
+        for (Recipe r : getAllRecipes()) {
+            if (r.isFavorite()) result.add(r);
         }
         return result;
     }
 
     public List<Recipe> getPlannedRecipes() {
         List<Recipe> result = new ArrayList<>();
-        for (Recipe recipe : getAllRecipes()) {
-            if (recipe.isInPlan()) {
-                result.add(recipe);
-            }
+        for (Recipe r : getAllRecipes()) {
+            if (r.isInPlan()) result.add(r);
         }
         return result;
     }
 
-    public List<Recipe> advancedSearch(String ingredient, String category, String time, String servings) {
+    public List<Recipe> advancedSearch(String ingredient, String category, String time, String serving) {
         List<Recipe> result = new ArrayList<>();
-        for (Recipe recipe : getAllRecipes()) {
-            boolean matchesIngredient = ingredient.isEmpty() || recipe.getIngredients().toString().toLowerCase().contains(ingredient.toLowerCase());
-            boolean matchesCategory = category.isEmpty() || recipe.getCategory().equalsIgnoreCase(category);
-            boolean matchesTime = time.isEmpty() || recipe.getCookingTime().equals(time);
-            boolean matchesServings = servings.isEmpty() || recipe.getServingSize().equals(servings);
-
-            if (matchesIngredient && matchesCategory && matchesTime && matchesServings) {
-                result.add(recipe);
-            }
+        for (Recipe r : getAllRecipes()) {
+            boolean match = true;
+            if (!ingredient.isEmpty() && r.getIngredients().stream().noneMatch(i -> i.contains(ingredient))) match = false;
+            if (!category.isEmpty() && !r.getCategory().equalsIgnoreCase(category)) match = false;
+            if (!time.isEmpty() && !r.getCookingTime().equalsIgnoreCase(time)) match = false;
+            if (!serving.isEmpty() && !r.getServingSize().equalsIgnoreCase(serving)) match = false;
+            if (match) result.add(r);
         }
         return result;
+    }
+
+    public String recipeToString(Recipe r) {
+        return "ID: " + r.getId() + "\nНазвание: " + r.getName() + "\nОписание: " + r.getDescription() +
+                "\nИнгредиенты: " + String.join(", ", r.getIngredients()) +
+                "\nШаги: " + String.join(", ", r.getSteps()) +
+                "\nКатегория: " + r.getCategory() +
+                "\nВремя приготовления: " + r.getCookingTime() +
+                "\nПорции: " + r.getServingSize() +
+                "\nИзбранное: " + (r.isFavorite() ? "Да" : "Нет") +
+                "\nДата создания: " + r.getCreatedDate() +
+                "\nВ плане: " + (r.isInPlan() ? "Да" : "Нет");
+    }
+
+    public void deleteRecipeById(int id) {
+        try (Connection conn = connect(); PreparedStatement stmt = conn.prepareStatement("DELETE FROM recipes WHERE id = ?")) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void importFromJson(String path) {
+        try {
+            JSONParser parser = new JSONParser();
+            JSONArray arr = (JSONArray) parser.parse(new FileReader(path));
+            for (Object o : arr) {
+                JSONObject obj = (JSONObject) o;
+                Recipe r = new Recipe(
+                        0,
+                        (String) obj.get("name"),
+                        (String) obj.get("description"),
+                        Arrays.asList(((String) obj.get("ingredients")).split(",")),
+                        Arrays.asList(((String) obj.get("steps")).split(",")),
+                        (String) obj.get("category"),
+                        (String) obj.get("cookingTime"),
+                        (String) obj.get("servingSize"),
+                        Boolean.parseBoolean((String) obj.get("isFavorite")),
+                        (String) obj.get("createdDate"),
+                        Boolean.parseBoolean((String) obj.get("inPlan"))
+                );
+                addRecipe(r);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void exportToJson(String path) {
+        JSONArray arr = new JSONArray();
+        for (Recipe r : getAllRecipes()) {
+            JSONObject obj = new JSONObject();
+            obj.put("name", r.getName());
+            obj.put("description", r.getDescription());
+            obj.put("ingredients", String.join(",", r.getIngredients()));
+            obj.put("steps", String.join(",", r.getSteps()));
+            obj.put("category", r.getCategory());
+            obj.put("cookingTime", r.getCookingTime());
+            obj.put("servingSize", r.getServingSize());
+            obj.put("isFavorite", String.valueOf(r.isFavorite()));
+            obj.put("createdDate", r.getCreatedDate());
+            obj.put("inPlan", String.valueOf(r.isInPlan()));
+            arr.add(obj);
+        }
+        try (FileWriter writer = new FileWriter(path)) {
+            writer.write(arr.toJSONString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Recipe extractRecipeFromResultSet(ResultSet rs) throws SQLException {
+        return new Recipe(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                Arrays.asList(rs.getString("ingredients").split(",")),
+                Arrays.asList(rs.getString("steps").split(",")),
+                rs.getString("category"),
+                rs.getString("cookingTime"),
+                rs.getString("servingSize"),
+                rs.getInt("isFavorite") == 1,
+                rs.getString("createdDate"),
+                rs.getInt("inPlan") == 1
+        );
     }
 }
