@@ -55,13 +55,29 @@ Date: 17th april 12:10-12:40
 2) SQL database integration
 
 
+Документация моего проекта: 
+
+1) Основные алгоритмы:
+CRUD – создание, просмотр, редактирование, удаление рецептов
+Поиск – по ингредиенту, категории, ID и другим
+Фильтрация и сортировка – по категории и времени приготовления
+Импорт/экспорт с JSON файлами
+Автогенерация ID – создается уникальный ID
+
+2) База данных (SQLite)
+Таблица recipes содержит поля: id, name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan) и тд
+Используется JDBC для выполнения SQL-запросов. Также идет запись данных в json-file.
+
+3) Проблемы:
+Я не знал, как реализовать графический интерфейс, валидацию данных и SQL и мне пришлось искать дополнительную информацию.
+
+
+.............................................................................................................................................................................................................................................
 
 
 Project Description:
 This project implements a mini-application for managing and working with recipes.
-
 The user can add, edit, view and delete recipes.
-
 Also implemented are advanced features such as search, filtering, favorites, JSON export/import, graphical interface (Swing) and database connection (SQLite).
 
 Main requirements (implemented):
@@ -109,3 +125,20 @@ I also completed additional tasks (2 of 3)
 1) Swing GUI
 2) SQL database integration
 
+
+
+Documentation of my project:
+
+1) Main algorithms:
+CRUD – creating, viewing, editing, deleting recipes
+Search – by ingredient, category, ID and others
+Filtering and sorting – by category and cooking time
+Import/export with JSON files
+ID autogeneration – a unique ID is created
+
+2) Database (SQLite)
+The recipes table contains the fields: id, name, description, ingredients, steps, category, cookingTime, servingSize, isFavorite, createdDate, inPlan) etc.
+JDBC is used to execute SQL queries. Data is also written to a json file.
+
+3) Problems:
+I didn't know how to implement a graphical interface, data validation and SQL and I had to look for additional information.
