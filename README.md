@@ -21,24 +21,27 @@ Supports both **console (CLI)** and **graphical (Swing GUI)** modes, JSON import
 
 ---
 
-## 🎯 Project Objectives
+## 🎯 Project Objectives AND Requirements:
 
-| Objective                       | Status            |
+| Objective                        | Status            |
 |----------------------------------|-------------------|
 | Implement CRUD Operations        | ✅ Completed       |
+| Command Line Interface           | ✅ Dual Support    |
 | Input Validation                 | ✅ Implemented     |
-| Data Persistence (JSON, SQLite) | ✅ Dual Support    |
-| Report Generation                | ✅ Implemented     |
-| Swing GUI                        | ✅ Ready           |
-| Modular Design                   | ✅ Structured      |
-| Error Handling                   | ✅ Try-Catch Used  |
+| Data Persistence:                | ✅ Implemented     |
+| Modular Design                   | ✅ Ready           |
+| Report Generation                | ✅ Done            |
 | JSON Import/Export               | ✅ Supported       |
-| Auto ID Generation               | ✅ Auto-increment  |
-| Documentation (Javadoc + Readme)| ✅ Done            |
+| Error Handling                   | ✅ Auto-increment  |
+| Documentation (Javadoc + Readme) | ✅ Structured      |
 
 ---
+### 🧩 Additional Tasks (2/3):
+- **Graphical User Interface (GUI) Implementation (Swing library)**
+- **Database Integration (SQL)**
 
-## ⚙️ Application Features
+
+## ⚙️ Application Features:
 
 ### 🔄 CRUD Operations
 - **Create:** Add new recipes (via CLI or GUI)
@@ -64,4 +67,45 @@ Supports both **console (CLI)** and **graphical (Swing GUI)** modes, JSON import
 
 ## 🖥️ User Interface
 
-### 🔧 CLI Mode:
+### ✨ 10 Key Features:
+
+➕ Add, Remove and Edit Recipes – Full CRUD functionality via Console and GUI
+
+📖 View All Recipes – Browse your recipe collection
+
+🔍 Search by Ingredient – Find recipes that include specific ingredients
+
+🏷️ Filter by Category – Narrow recipes by type (e.g., Dessert, Main Dish)
+
+⏱️ Sort by Cooking Time – Order recipes by preparation duration
+
+⭐ Favorite Recipes – Mark and view your favorite recipes
+
+📅 Planned Recipes – Add recipes to a cooking plan
+
+🧠 Advanced Search – Search using multiple criteria (name, category, time, servings)
+
+📤 Import and Export JSON – Save and load recipes from JSON files
+
+📆 Created Date Tracking – Automatically records when each recipe was added
+
+🗃️ SQL Database (SQLite) – Recipes stored persistently using JDBC + SQLite
+
+
+## ✅ 10 Core Functionalities:
+
+| # | Feature                          | Description |
+|--:|----------------------------------|-------------|
+| 1 | ➕ **Add, Edit, Delete Recipes** | Full CRUD support via GUI and CLI |
+| 2 | 📖 **View All Recipes**          | Display recipe list |
+| 3 | 🔍 **Search by Ingredient**      | Search for matching items |
+| 4 | 🏷️ **Filter by Category**        | Filter based on recipe type |
+| 5 | ⏱️ **Sort by Cooking Time**      | Sort recipes by preparation time |
+| 6 | ⭐ **Favorite Recipes**          | Mark recipes as favorites |
+| 7 | 📅 **Planned Recipes**           | Add recipes to a cooking schedule |
+| 8 | 🧠 **Advanced Search**           | Search by name, time, servings, etc. |
+| 9 | 📤📥 **Import/Export JSON**      | Backup and restore recipes |
+|10 | 📆 **Created Date Tracking**     | Timestamp when a recipe was created |
+|11 | 🗃️ **SQL Database (SQLite)**     | Persistent storage with JDBC |
+
+
