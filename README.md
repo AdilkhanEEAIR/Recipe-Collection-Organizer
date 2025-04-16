@@ -132,7 +132,6 @@ advanced search and filtering, database persistence, and modern UI.
 | inPlan	       | BOOLEAN	       | true if in cooking plan                      |
 
 
-
 ### 📁 JSON Example
 ```json
 {
@@ -147,8 +146,89 @@ advanced search and filtering, database persistence, and modern UI.
   "isFavorite": true,
   "createdDate": "2025-04-10",
   "inPlan": false
+} 
+```
+
+🧪 **Input Validation**  
+- Ensures non-empty fields for name, ingredients, etc.  
+- Prevents duplicate IDs  
+- Validates numeric inputs (time, servings)
+
+
+💾 **Persistent Data**  
+- `recipes.db`: SQLite database for all recipes
+- `recipes.json` : there is added recipes
+
+📊 **Report Generation**
+
+- generateReport(): Outputs all recipe stats
+- getPlannedRecipes(): Shows all planned meals
+- getFavorites(): Lists favorite recipes
+
+
+⚠️ **Error Handling**
+
+- Try-catch for file I/O & database exceptions
+- User-friendly error messages via GUI/CLI
+
+
+### 🧠 Algorithms
+📈 **Search & Sort**
+
+- Search by ingredients, category, time, servings
+- Sort by cooking time, name or ID
+
+### 📊 Log Frequency Analysis
+
+- Uses HashMap<String, Integer> to track most common actions
+- Generates top-used feature stats
+
+
+## 📦 Java Class: `Recipe.java`
+
+```java
+public class Recipe {
+    private int id;
+    private String name;
+    private String description;
+    private List<String> ingredients;
+    private List<String> steps;
+    private String category;
+    private String cookingTime;
+    private String servingSize;
+    private boolean isFavorite;
+    private String createdDate;
+    private boolean inPlan;
 }
+```
 
+### ✅ Run Instructions
 
+1. Open project in IntelliJ or any Java IDE
+2. Ensure recipes.db and JSON files are in the project directory
+3. Compile and run Main.java
+4. Use CLI or GUI to interact with the app
+5. Choose role: Admin or User
+6. Perform operations from menus (Add, Edit, Search, etc.)
 
+### 📌Notes:
+I didn't know how to create a GUI and sql tables, so I had to look for more information.
+
+### ✅ OUTPUTS:
+
+![image](https://github.com/user-attachments/assets/96a003f2-7efd-42e2-b28e-93f3d35b080e)
+
+![image](https://github.com/user-attachments/assets/afcc6783-1e78-4397-93c5-e2152216c66f)
+
+![image](https://github.com/user-attachments/assets/796f3f0b-b8ed-4df7-a8b2-cf1cdca5446b)
+
+![image](https://github.com/user-attachments/assets/5b0b8064-a2e0-4ba7-a01e-9685da411599)
+
+![image](https://github.com/user-attachments/assets/ce4741c2-1f62-4347-abad-ebf62d149b6c)
+
+![image](https://github.com/user-attachments/assets/66b6a29b-082b-4f70-b58d-28bec3ece490)
+
+![image](https://github.com/user-attachments/assets/309c447d-84f0-45a5-8b81-637e7f6b11ba)
+
+![image](https://github.com/user-attachments/assets/5a1daad0-3d64-4127-8403-6fa9ffce9417)
 
