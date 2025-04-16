@@ -10,6 +10,10 @@
 A Java-based recipe management application that allows users to add, edit, delete, and search recipes.  
 Supports both **console (CLI)** and **graphical (Swing GUI)** modes, JSON import/export, and SQLite database integration using JDBC.
 
+## 🎯 Project Goal  
+To build a reliable, user-friendly, and modular recipe management application with full CRUD functionality,
+advanced search and filtering, database persistence, and modern UI.
+
 ### 🧾 Key Features:
 - ✅ Full CRUD operations with validation
 - ✅ Ingredient and category management
@@ -92,7 +96,7 @@ Supports both **console (CLI)** and **graphical (Swing GUI)** modes, JSON import
 🗃️ SQL Database (SQLite) – Recipes stored persistently using JDBC + SQLite
 
 
-## ✅ 10 Core Functionalities:
+## ✅ 10 KEY Functionalities:
 
 | # | Feature                          | Description |
 |--:|----------------------------------|-------------|
@@ -104,8 +108,47 @@ Supports both **console (CLI)** and **graphical (Swing GUI)** modes, JSON import
 | 6 | ⭐ **Favorite Recipes**          | Mark recipes as favorites |
 | 7 | 📅 **Planned Recipes**           | Add recipes to a cooking schedule |
 | 8 | 🧠 **Advanced Search**           | Search by name, time, servings, etc. |
-| 9 | 📤📥 **Import/Export JSON**      | Backup and restore recipes |
+| 9 | 📤 **Import/Export JSON**        | Backup and restore recipes |
 |10 | 📆 **Created Date Tracking**     | Timestamp when a recipe was created |
 |11 | 🗃️ **SQL Database (SQLite)**     | Persistent storage with JDBC |
+
+
+
+
+### 📂 SQLite Table: recipes
+
+| Column	       | Type	           | Description                                  |
+|---------------:|----------------:|----------------------------------------------|
+| id	           | INTEGER	       | Auto-incremented recipe ID (Primary Key)     |
+| name	         | TEXT	           | Name of the recipe                           |
+| description    | TEXT	           | Short description of the dish                |
+| ingredients    | TEXT	           | List of ingredients (semicolon-separated)    |
+| steps	         | TEXT	           | List of cooking steps (semicolon-separated)  |
+| category	     | TEXT	           | Recipe category (e.g., Main, Dessert)        |
+| cookingTime    | TEXT	           | Time in minutes                              |
+| servingSize	   | TEXT	           | Number of servings                           |
+| isFavorite	   | BOOLEAN	       | true if marked as favorite                   |
+| createdDate	   | TEXT	           | Date of creation (yyyy-MM-dd)                |
+| inPlan	       | BOOLEAN	       | true if in cooking plan                      |
+
+
+
+### 📁 JSON Example
+```json
+{
+  "id": 1,
+  "name": "Borscht",
+  "description": "Traditional soup",
+  "ingredients": ["Beetroot", "Cabbage", "Meat"],
+  "steps": ["Boil water", "Add ingredients"],
+  "category": "Main",
+  "cookingTime": "60",
+  "servingSize": "4",
+  "isFavorite": true,
+  "createdDate": "2025-04-10",
+  "inPlan": false
+}
+
+
 
 
